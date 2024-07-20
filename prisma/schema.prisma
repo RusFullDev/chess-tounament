@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user    @map("user")
+  admin   @map("admin")
+  creator @map("creator")
+}
+
+model User {
+  id                   Int     @id @default(autoincrement())
+  name                 String
+  phone                String  @unique
+  role                 Role    @default(user)
+  hashed_password      String?
+  hashed_refresh_token String?
+
+  @@map("user")
+}
+
+model Player {
+  id          Int           @id @default(autoincrement())
+  name        String
+  age         Int
+  rating      String
+  country     String
+  player_tour Player_tour[]
+
+  @@map("player")
+}
+
+model Tournament {
+  id          Int           @id @default(autoincrement())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  player_tour Player_tour[]
+  match       Match[]
+
+  @@map("tournament")
+}
+
+model Player_tour {
+  id           Int        @id @default(autoincrement())
+  playerId     Int
+  tournamentId Int
+  Tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  Player       Player     @relation(fields: [playerId], references: [id])
+
+  @@map("player_tour")
+}
+
+model Leaderboard {
+  id      Int     @id @default(autoincrement())
+  round   String
+  players Json
+  score   Float
+
+  @@map("leaderboard")
+}
+
+model Match {
+  id           Int         @id @default(autoincrement())
+  round        String
+  player1_Id   Int
+  player2_Id   Int
+  player1Score Float        @default(0)
+  player2Score Float         @default(0)
+  finish       Finish[]
+  Tournament   Tournament? @relation(fields: [tournamentId], references: [id])
+  tournamentId Int?
+
+  @@map("match")
+}
+
+model Finish {
+  id      Int     @id @default(autoincrement())
+  player  Int
+  result  Float
+  matchId Int
+  Match   Match   @relation(fields: [matchId], references: [id])
+
+  @@map("finish")
+}
